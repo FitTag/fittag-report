@@ -1,0 +1,99 @@
+\documentclass[11pt, a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{cmap}
+\usepackage[italian]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{relsize}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{xcolor}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{csquotes}
+\usepackage{siunitx}
+\usepackage{listings}
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath}
+\definecolor{codegray}{rgb}{0.96, 0.96, 0.98}
+\definecolor{keywordblue}{rgb}{0.13, 0.29, 0.53}
+\definecolor{stringgreen}{rgb}{0.29, 0.54, 0.13}
+\definecolor{commentrgb}{rgb}{0.50, 0.50, 0.50}
+
+\lstdefinestyle{modernsql}{
+    backgroundcolor=\color{codegray},
+    commentstyle=\color{commentrgb}\itshape,
+    keywordstyle=\color{keywordblue}\bfseries,
+    numberstyle=\tiny\color{commentrgb},
+    stringstyle=\color{stringgreen},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=none,
+    numbersep=8pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=4,
+    frame=single,
+    rulecolor=\color{codegray},
+    frameround=tttt
+}
+\lstset{style=modernsql}
+\sisetup{locale = IT}
+\hypersetup{hidelinks}
+
+\begin{document}
+
+    \begin{titlepage}
+        \centering
+        \vspace*{0.5cm}
+
+        \includegraphics[width=0.35\textwidth]{img/uniud_logo.pdf}\\[1cm]
+
+        {\LARGE \textsc{Università degli Studi di Udine}}\\[0.3cm]
+        {\large Dipartimento di Scienze Matematiche, Informatiche e Fisiche}\\[1.5cm]
+
+        \rule{\linewidth}{0.4mm} \\[0.8cm]
+        {\Huge \textbf{Progetto di Internet of Things}}\\[0.8cm]
+        \rule{\linewidth}{0.4mm} \\[2cm]
+
+        \begin{minipage}[t]{0.45\textwidth}
+            \begin{flushleft} \large
+                \emph{Docente:}\\[0.2cm]
+                \textbf{Prof. Scagnetto Ivan}
+            \end{flushleft}
+        \end{minipage}
+        \hfill
+        \begin{minipage}[t]{0.5\textwidth}
+            \begin{flushright} \large
+                \emph{Autori:}\\[0.2cm]
+                \textbf{Cossidente Davide}\\ \href{mailto:166898@spes.uniud.it}{\normalsize 166898@spes.uniud.it}\\[0.2cm]
+                \textbf{Zorzi Luca}\\ \href{mailto:167341@spes.uniud.it}{\normalsize 167341@spes.uniud.it}
+            \end{flushright}
+        \end{minipage}
+
+        \vfill
+
+        {\large \textbf{Anno Accademico 2025--2026}}
+        \vspace*{0.5cm}
+    \end{titlepage}
+
+    \tableofcontents
+    \newpage
+
+    \chapter{Introduzione}
+    \input{sections/1_introduction}
+
+    \appendix
+    \chapter{Appendice}
+\end{document}
