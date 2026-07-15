@@ -1,0 +1,12 @@
+Il progetto FitTag è un ecosistema IoT progettato per il monitoraggio intelligente delle attività sportive.
+Il progetto è composto da due macro-sistemi strettamente interconnessi: un bracciale hardware intelligente (FitTag Band) e un'applicazione mobile dedicata per l'interazione con l'utente (FitTag App).
+
+\paragraph{FitTag Band}
+Il dispositivo wearable è un'unità indipendente dotata di batteria, IMU (Inertial Measurement Unit) e sensore Pulse-Oximeter (sensore di battiti e di ossigenazione del sangue).
+La principale funzionalità del sistema è la registrazione di sessioni di allenamento, arricchita dal riconoscimento automatico dell'attività sportiva che l'utente sta svolgendo.
+Questa capacità è resa possibile dall'implementazione a on-device di un modello di Machine Learning ottimizzato per l'inferenza in tempo reale.
+
+\paragraph{FitTag App}
+L'applicazione mobile costituisce l'interfaccia utente dell'ecosistema, progettata per operare in stretta sinergia con il bracciale tramite comunicazione wireless Bluetooth Low Energy (BLE).
+La principale funzionalità del software è la gestione remota del dispositivo e delle sessioni di allenamento, affiancata dalla raccolta e visualizzazione delle metriche sportive.
+Questa interazione bidirezionale permette all'app sia di inviare comandi operativi al wearable, sia di restituire all'utente un quadro immediato dei parametri vitali e delle attività predette dal modello di Machine Learning.
