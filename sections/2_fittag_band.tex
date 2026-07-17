@@ -39,14 +39,37 @@ La FSM è strutturata sui seguenti stati operativi:
     \label{fig:fittag_fsm}
 \end{figure}
 
-\subsection{Cose implementate nel codice degne di nota} % TODO: continuare da qua
-Per massimizzare l'efficienza energetica, l'architettura è fortemente basata sugli interrupt. Invece di eseguire il \textit{polling} continuo dei sensori, il microcontrollore sfrutta il pin di interrupt \texttt{INT1} dell'LSM6DS3TR-C, configurato per generare un segnale hardware quando la FIFO interna raggiunge una specifica soglia di riempimento. Solo al verificarsi dell'evento la CPU si risveglia, scarica il blocco di dati tramite I2C e li elabora, per poi tornare in uno stato di basso consumo.
-Per quanto rigurd i battiti non si usano interrupt pk viene fatto un polling molto lento.
+\subsection{Paradigma Event-Driven e Strategie di Acquisizione Dati}
+Al fine di massimizzare l'efficienza energetica del sistema e prolungare l'autonomia della batteria, l'architettura del firmware adotta un modello orientato agli eventi, eliminando la necessità di eseguire il polling continuo delle periferiche.
 
-\subsection{GATT BLE}
-Il livello di connettività è implementato attraverso uno stack BLE che espone servizi e caratteristiche customizzate. Il dispositivo opera come periferica (\textit{GATT Server}), accettando comandi di controllo sulla caratteristica di scrittura (RX) e trasmettendo in modo asincrono le notifiche (TX) contenenti i log dei sensori, le metriche sportive e le predizioni del modello algoritmico.
+Nello specifico, la memoria interna del sensore viene configurata in modalità FIFO; al raggiungimento di una determinata soglia di riempimento, l'hardware dell'IMU genera un impulso elettrico sul pin fisico di interrupt.
+Questo approccio consente al microcontrollore di permanere in uno stato di sospensione a basso consumo, riducendo drasticamente i cicli di clock sprecati in attesa della disponibilità del dato.
+Il processore viene risvegliato dall'interrupt, esegue uno scaricamento a blocchi del buffer e rientra immediatamente nello stato di sleep.
 
-\section{Modello ML}
+Come mostrato nel frammento di codice~\ref{lst:imu_int}, tale comportamento viene configurato settando il bit \texttt{INT1\_FTH} del registro \texttt{INT1\_CTRL} dell'LSM6DS3TR-C, il quale instrada l'evento di raggiungimento della soglia FIFO direttamente sul pad hardware \texttt{INT1}.
+
+\begin{lstlisting}[language=C++, caption={Configurazione del registro di controllo interrupt per l'unità inerziale.}, label=lst:imu_int]
+// Abilitazione interrupt su soglia FIFO (bit INT1_FTH, valore 0x08) 
+// e instradamento sul pin hardware INT1 dell'IMU
+IMU.writeRegister(LSM6DS3_ACC_GYRO_INT1_CTRL, 0x08);
+\end{lstlisting}
+
+Al contrario, la gestione dei parametri vitali rilevati dal sensore MAX30102 segue una strategia differente. Poiché le metriche cardiache presentano dinamiche temporali significativamente più lente rispetto alle accelerazioni generate dal movimento corporeo, l'acquisizione dei dati viene demandata a un ciclo di polling programmato a bassa frequenza, sufficiente a garantire la stabilità di calcolo dell'algoritmo di estrazione dei battiti al minuto senza gravare sul budget energetico complessivo del dispositivo.
+
+\subsection{Protocollo di comunicazione BLE}
+L'interscambio dati tra il wearable e l'applicazione mobile è basato sul protocollo Bluetooth Low Energy (BLE). Il dispositivo FitTag Band è configurato per esporre un servizio primario custom (\texttt{fitTagService}).
+
+Il servizio è strutturato in quattro caratteristiche distinte, ciascuna deputata a uno specifico flusso informativo:
+\begin{itemize}
+    \item \textbf{Control Characteristic (Write Only):} Permette all'applicazione mobile di inviare in modalità asincrona comandi di controllo di $1\,byte$. La ricezione di un comando attiva una routine di callback che valida la richiesta ed esegue la transizione di stato della macchina a stati finiti.
+    \item \textbf{Inference Characteristic (Notify):} Utilizzata per trasmettere in tempo reale il risultato della classificazione effettuata dal modello integrato. Invia un pacchetto a lunghezza fissa di $1\,byte$ contenente l'ID dell'attività rilevata.
+    \item \textbf{Data Log Characteristic (Notify):} Dedicata esclusivamente alla fase offline di raccolta dati cinematici. Sfrutta la modalità di notifica per inviare in modo efficiente array di strutture \texttt{IMUPayload} contenenti i campioni grezzi di accelerometro e giroscopio necessari per l'addestramento del modello.
+    \item \textbf{Workout Characteristic (Notify):} Trasmette a frequenza di $1\,Hz$ la telemetria riepilogativa dell'allenamento (\texttt{WorkoutPayload}). Il pacchetto include il battito cardiaco filtrato, i passi totali registrati dal contapassi hardware, la cadenza calcolata e l'indice di intensità del movimento.
+\end{itemize}
+
+Oltre al servizio custom, il firmware inizializza il servizio standard di monitoraggio della batteria (\texttt{batteryService}), consentendo all'app mobile di accedere alle informazioni sul livello di carica.
+
+\section{Modello ML} % TODO: continuare da qui
 La capacità di \textit{Human Activity Recognition} (HAR) del bracciale è resa possibile dall'implementazione \textit{on-device} di un classificatore ad albero, specificamente un \textit{Random Forest}, ottimizzato per l'esecuzione su sistemi embedded con risorse limitate (TinyML).
 
 Il firmware applica un approccio a finestra temporale scorrevole (\textit{Sliding Window}) sui dati grezzi di accelerometro e giroscopio. Per campionamenti a 13 Hz, il sistema accumula dati in una finestra di 5 secondi (65 campioni). Per garantire una reattività ottimale mantenendo un contesto storico sufficiente, la finestra avanza con uno scivolamento (\textit{overlap}) di 2 secondi (26 campioni), permettendo di generare una nuova predizione regolarmente senza perdere ciclicità nel movimento.
