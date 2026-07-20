@@ -12,21 +12,21 @@ L'infrastruttura dell'applicazione si basa su una progettazione guidata dagli ev
 
 \begin{figure}[ht]
     \centering
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/app/home_screen.png}
         \caption{Home Screen}
         \label{fig:home_screen}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/app/workout_screen.png}
         \caption{Allenamento attivo}
         \label{fig:workout_active}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/app/settings_screen.png}
         \caption{Impostazioni}
@@ -44,15 +44,15 @@ La scoperta del bracciale avviene tramite una scansione wireless mirata, impleme
 \begin{table}[ht]
     \centering
     \small
-    \renewcommand{\arraystretch}{1.5}
-    \begin{tabular}{p{3.8cm} l p{7.5cm}}
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{>{\raggedright\arraybackslash}p{4.2cm} >{\raggedright\arraybackslash}p{2.0cm} >{\raggedright\arraybackslash}p{6.6cm}}
         \hline
         \textbf{Caratteristica / UUID} & \textbf{Proprietà} & \textbf{Descrizione operativa} \\ \hline
-        \texttt{ctrlChar} \newline \tiny\texttt{19b10001-e8f2-537e-4f6c-d104768a1214} & Scrittura, Lettura & Utilizzata per l'invio di comandi di cambio stato (payload a singolo byte). Consente all'applicazione di controllare la macchina a stati del bracciale. \\ \hline
-        \texttt{dataLogChar} \newline \tiny\texttt{19b10002-e8f2-537e-4f6c-d104768a1214} & Notifica & Trasmissione ad alta frequenza dei dati dei sensori inerziali grezzi (accelerometro e giroscopio), impiegata per la calibrazione e la raccolta dati. \\ \hline
-        \texttt{workoutChar} \newline \tiny\texttt{19b10003-e8f2-537e-4f6c-d104768a1214} & Notifica & Canale per la notifica dei dati elaborati (frequenza cardiaca, passi, cadenza, livello di sforzo) durante la sessione di allenamento. \\ \hline
-        \texttt{inferChar} \newline \tiny\texttt{19b10004-e8f2-537e-4f6c-d104768a1214} & Notifica & Invio in tempo reale delle predizioni dell'attività calcolate dal modello di classificazione a bordo del bracciale. \\ \hline
-        \texttt{batteryLevelChar} \newline \tiny\texttt{00002a19-0000-1000-8000-00805f9b34fb} & Lettura & Caratteristica dello standard Battery Service che espone la percentuale di carica residua della batteria del wearable. \\ \hline
+        \texttt{ctrlChar} \newline {\tiny\texttt{19b10001-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Scrittura, Lettura & Utilizzata per l'invio di comandi di cambio stato (payload a singolo byte). Consente all'applicazione di controllare la macchina a stati del bracciale. \\ \hline
+        \texttt{dataLogChar} \newline {\tiny\texttt{19b10002-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Notifica & Trasmissione ad alta frequenza dei dati dei sensori inerziali grezzi (accelerometro e giroscopio), impiegata per la calibrazione e la raccolta dati. \\ \hline
+        \texttt{workoutChar} \newline {\tiny\texttt{19b10003-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Notifica & Canale per la notifica dei dati elaborati (frequenza cardiaca, passi, cadenza, livello di sforzo) durante la sessione di allenamento. \\ \hline
+        \texttt{inferChar} \newline {\tiny\texttt{19b10004-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Notifica & Invio in tempo reale delle predizioni dell'attività calcolate dal modello di classificazione a bordo del bracciale. \\ \hline
+        \texttt{batteryLevelChar} \newline {\tiny\texttt{00002a19-\allowbreak 0000-\allowbreak 1000-\allowbreak 8000-\allowbreak 00805f9b34fb}} & Lettura & Caratteristica dello standard Battery Service che espone la percentuale di carica residua della batteria del wearable. \\ \hline
     \end{tabular}
     \caption{Mappatura delle caratteristiche del protocollo GATT BLE di FitTag.}
     \label{tab:ble_characteristics}
@@ -64,7 +64,7 @@ La macchina a stati finiti (FSM) che regola il funzionamento del bracciale è pr
 A livello software, l'applicazione gestisce questa limitazione coordinando una sequenza temporizzata per ogni cambio di stato:
 \begin{enumerate}
     \item L'applicazione invia al bracciale un comando per forzare il ritorno allo stato di riposo.
-    \item L'applicazione attende una brevissima pausa di assestamento di circa $150\,ms$. Questo intervallo consente al dispositivo di spegnere i moduli hardware precedentemente attivi e prepararsi alla ricezione di una nuova modalità.
+    \item L'applicazione attende una brevissima pausa di assestamento di circa $150ms$. Questo intervallo consente al dispositivo di spegnere i moduli hardware precedentemente attivi e prepararsi alla ricezione di una nuova modalità.
     \item Viene inviato il comando per attivare lo stato di destinazione desiderato.
 \end{enumerate}
 Questo meccanismo sequenziale previene eventuali blocchi o conflitti di configurazione a livello dei sensori del bracciale, garantendo la stabilità del collegamento wireless.
@@ -150,12 +150,12 @@ Questo flusso richiede un coordinamento specifico per via del funzionamento hard
 \begin{enumerate}
     \item L'app richiede la transizione passante per l'idle, ponendo il bracciale in \texttt{BATT\_LVL\_STATE} (2).
     \item Il firmware del bracciale si risveglia, abilita il convertitore analogico-digitale (ADC), campiona la tensione presente sui pin di alimentazione, calcola la percentuale stimata, scrive tale valore all'interno della caratteristica standard del \textit{Battery Level} e ritorna automaticamente in \texttt{IDLE}.
-    \item L'applicazione attende un tempo di campionamento stimato in $700\,ms$, dopodiché interroga in lettura il Battery Service standard memorizzando la percentuale letta.
+    \item L'applicazione attende un tempo di campionamento stimato in $700ms$, dopodiché interroga in lettura il Battery Service standard memorizzando la percentuale letta.
 \end{enumerate}
 Il livello della batteria viene mostrato graficamente con icone incrementali. La schermata Home ospita inoltre le statistiche aggregate ricavate dallo storico e il pulsante per avviare un nuovo allenamento.
 
 \subsection{Schermata di allenamento}
-Quando l'utente avvia un allenamento, l'applicazione forza la transizione del bracciale in \texttt{WORKOUT\_STATE} (5) ed effettua la sottoscrizione ai messaggi di notifica della caratteristica \texttt{workoutChar}. Le letture avvengono con una cadenza di circa $1\,Hz$. Ciascun pacchetto dati trasmesso dal bracciale ha una dimensione di esattamente \textbf{5 byte}. L'applicazione decodifica il pacchetto binario ricevuto per ricostruire le seguenti metriche:
+Quando l'utente avvia un allenamento, l'applicazione forza la transizione del bracciale in \texttt{WORKOUT\_STATE} (5) ed effettua la sottoscrizione ai messaggi di notifica della caratteristica \texttt{workoutChar}. Le letture avvengono con una cadenza di circa $1\,\text{Hz}$. Ciascun pacchetto dati trasmesso dal bracciale ha una dimensione di esattamente \textbf{5 byte}. L'applicazione decodifica il pacchetto binario ricevuto per ricostruire le seguenti metriche:
 \begin{itemize}
     \item \textbf{Byte 0 (BPM):} Frequenza cardiaca istantanea estratta come intero a 8 bit senza segno.
     \item \textbf{Byte 1 e 2 (passi):} Conto totale dei passi accumulati. Trattandosi di un valore a 16 bit trasmesso con codifica Little-endian, l'app lo decodifica combinando i byte mediante l'operazione:
@@ -204,14 +204,14 @@ Questi dati vengono visualizzati attraverso un elenco descrittivo affiancato da 
 
 \begin{figure}[ht]
     \centering
-    \begin{subfigure}[b]{0.45\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/app/inference_screen.png}
         \caption{Schermata di inferenza}
         \label{fig:inference_screen}
     \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.45\textwidth}
+    \hspace{1cm}
+    \begin{subfigure}[t]{0.3\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/app/workout_detail_screen.png}
         \caption{Grafici di dettaglio allenamento}
@@ -242,10 +242,10 @@ Se l'app non è connessa a un bracciale, attiva una routine di scansione continu
 
 L'applicazione decodifica il valore RSSI (\textit{Received Signal Strength Indicator}) in dBm per stimare la distanza fisica e la qualità del link radio, visualizzando un'icona del segnale colorata in tempo reale:
 \begin{itemize}
-    \item \textbf{Verde (RSSI $\ge -60\,dBm$):} segnale ottimale, accoppiamento stabile a breve distanza.
-    \item \textbf{Giallo ($-70\,dBm \le \text{RSSI} < -60\,dBm$):} segnale buono, distanza moderata.
-    \item \textbf{Arancione ($-85\,dBm \le \text{RSSI} < -70\,dBm$):} segnale debole, possibili rallentamenti di notifica.
-    \item \textbf{Rosso (RSSI $< -85\,dBm$):} segnale stabile o a rischio per fuori portata.
+    \item \textbf{Verde (RSSI $\ge -60\,\text{dBm}$):} segnale ottimale, accoppiamento stabile a breve distanza.
+    \item \textbf{Giallo ($-70\,\text{dBm} \le \text{RSSI} < -60\,\text{dBm}$):} segnale buono, distanza moderata.
+    \item \textbf{Arancione ($-85\,\text{dBm} \le \text{RSSI} < -70\,\text{dBm}$):} segnale debole, possibili rallentamenti di notifica.
+    \item \textbf{Rosso (RSSI $< -85\,\text{dBm}$):} segnale stabile o a rischio per fuori portata.
 \end{itemize}
 
 \paragraph{Profilo utente ed impostazione dell'età:}
