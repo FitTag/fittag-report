@@ -75,7 +75,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: "FitTag Report"
-          path: report
+          path: .
 
       - name: Delete old release and tag
         run: |
