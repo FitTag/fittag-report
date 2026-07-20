@@ -1,11 +1,11 @@
 \section{Architettura hardware}
 L'infrastruttura computazionale della FitTag Band è incentrata sul System on Chip (SoC) Seeed Studio XIAO nRF52840 Sense Plus.
-Questa piattaforma è stata selezionata per la sua elevata densità di integrazione, ospitando nativamente un'unità di misura inerziale (IMU), un ricetrasmettitore per la connettività wireless (Bluetooth Low Energy) e il circuito integrato BQ25101, un controller dedicato alla ricarica e alla gestione in sicurezza della batteria ai polimeri di litio (LiPo).
+Questa piattaforma è stata selezionata per la sua elevata densità di integrazione, ospitando nativamente un'unità di misuramento inerziale (IMU), un ricetrasmettitore per la connettività wireless e il circuito integrato BQ25101, un controller dedicato alla ricarica e alla gestione in sicurezza della batteria ai polimeri di litio (LiPo).
 
-La rilevazione cinematica del movimento è affidata al sensore LSM6DS3TR-C, un'IMU a 6 gradi di libertà che combina un accelerometro 3D e un giroscopio 3D. Il sensore dispone di una memoria FIFO hardware da $4\,kB$, configurata per l'accumulo temporaneo dei campioni al fine di ridurre la frequenza di risveglio della CPU.
+La rilevazione cinematica del movimento è affidata al sensore LSM6DS3TR-C, un'IMU a 6 assi che combina un accelerometro e un giroscopio. Il sensore dispone di una memoria FIFO hardware da $4\,\text{kB}$, configurata per l'accumulo temporaneo dei campioni al fine di ridurre il carico della CPU.
 L'interfacciamento con l'unità di elaborazione avviene mediante bus seriale $I^2C$ e sfrutta linee di interrupt hardware dedicate per segnalare in modalità asincrona la disponibilità di nuovi dati, ottimizzando i consumi energetici complessivi.
 
-Il monitoraggio dei parametri vitali è invece deputato al sensore esterno MAX30102. Questa unità integra due diodi emettitori di luce, uno nello spettro del rosso a $660\,nm$ e uno nell'infrarosso a $880\,nm$, accoppiati a un fotorilevatore ad alta sensibilità.
+Il monitoraggio dei parametri vitali è invece deputato al sensore esterno MAX30102. Questa unità integra due LED, uno nello spettro del rosso a $660\,nm$ e uno nell'infrarosso a $880\,nm$, accoppiati a un fotorilevatore ad alta sensibilità.
 Il modulo comunica con la MCU condividendo il medesimo bus $I^2C$ tramite indirizzamento logico dedicato.
 
 \begin{figure}[h!]
@@ -16,39 +16,169 @@ Il modulo comunica con la MCU condividendo il medesimo bus $I^2C$ tramite indiri
 \end{figure}
 
 \section{Architettura software}
-Il firmware del dispositivo è sviluppato in linguaggio C++ sfruttando i vantaggi dell'ambiente integrato PlatformIO e del framework Arduino core per architetture nRF52. L'architettura software è stata progettata come una macchina a stati finiti e si appoggia a librerie specializzate per l'interfacciamento con i sensori e per la gestione del protocollo di comunicazione BLE.
+Il firmware del dispositivo è sviluppato in linguaggio C++ sfruttando i vantaggi dell'ambiente integrato PlatformIO e del framework Arduino Core per architetture nRF52. L'architettura software è stata progettata come una macchina a stati finiti e si appoggia a librerie specializzate per l'interfacciamento con i sensori e per la gestione del protocollo di comunicazione BLE.
 
-\subsection{La Macchina a Stati Finiti}
+\subsection{La macchina a stati finiti}
 La logica di controllo del sistema è orchestrata da una Macchina a Stati Finiti (FSM) che regola in modo deterministico le modalità operative del bracciale.
-L'adozione di una FSM consente di implementare politiche attive di risparmio energetico: i sensori e i relativi canali di comunicazione vengono attivati, configurati o posti in modalità di sospensione hardware (sleep mode) esclusivamente quando strettamente richiesto dallo stato corrente.
+L'adozione di una FSM consente di implementare politiche attive di risparmio energetico: i sensori e i relativi canali di comunicazione vengono attivati, configurati o posti in modalità sleep esclusivamente quando strettamente richiesto dallo stato corrente.
 
-La FSM è strutturata sui seguenti stati operativi:
+La FSM è strutturata sui seguenti stati:
 \begin{itemize}
     \item \textbf{\texttt{INIT\_STATE}:} Stato transitorio iniziale. Una volta completato il setup, il sistema transita automaticamente verso lo stato di riposo \texttt{IDLE\_STATE}.
-    \item \textbf{\texttt{IDLE\_STATE}:} Stato di standby a basso consumo energetico. In questa fase i sensori vengono spenti per preservare la carica della batteria. Questo stato è inoltre lo stato centrale dell FSM, in quanto qualsiasi transizione tra le diverse modalità operative della periferica deve necessariamente transitare attraverso questo stato.
-    \item \textbf{\texttt{INFER\_STATE}:} Stato operativo in cui il sistema esegue on-device l'algoritmo di classificazione. L'IMU acquisisce i dati cinematici e li memorizza in un buffer temporaneo per consentire al modello di Machine Learning di stimare l'attività dell'utente in tempo reale.
-    \item \textbf{\texttt{DATA\_LOG\_STATE}:} Stato finalizzato alla raccolta dati per l'addestramento offline del classificatore. Il microcontrollore campiona i segnali grezzi di accelerometro e giroscopio a $13\,Hz$ e li trasmette continuamente via BLE verso l'applicazione di raccolta.
+    \item \textbf{\texttt{IDLE\_STATE}:} Stato di standby a basso consumo energetico. In questa fase i sensori vengono spenti per preservare la carica della batteria. Questo stato è inoltre lo stato centrale della FSM, in quanto qualsiasi transizione tra le diverse modalità operative della periferica deve necessariamente transitare attraverso questo stato.
+    \item \textbf{\texttt{INFER\_STATE}:} Stato operativo in cui il sistema esegue on-device l'algoritmo di classificazione. L'IMU acquisisce i dati cinematici e li memorizza in un buffer temporaneo per consentire al modello di Machine Learning di riconoscere l'attività dell'utente in tempo reale.
+    \item \textbf{\texttt{DATA\_LOG\_STATE}:} Stato finalizzato alla raccolta dati per l'addestramento offline del classificatore. Il microcontrollore campiona i segnali grezzi di accelerometro e giroscopio e li trasmette via BLE verso lo script di raccolta dati.
     \item \textbf{\texttt{WORKOUT\_STATE}:} Stato attivo di monitoraggio dell'allenamento. In questa modalità vengono abilitati il contapassi hardware integrato nell'IMU e il sensore ottico per la rilevazione del battito cardiaco, calcolando e sincronizzando le metriche prestazionali a intervalli regolari.
-    \item \textbf{\texttt{BATT\_LVL\_STATE}:} Stato transitorio deputato alla lettura della tensione della batteria tramite il convertitore analogico-digitale (ADC). La percentuale di carica residua calcolata viene inviata al client BLE prima di far ritornare automaticamente il dispositivo in \texttt{IDLE\_STATE}.
+    \item \textbf{\texttt{BATT\_LVL\_STATE}:} Stato temporaneo deputato alla lettura della tensione della batteria tramite il convertitore analogico-digitale (ADC). La percentuale di carica residua calcolata viene inviata al client BLE prima di far ritornare automaticamente il dispositivo in \texttt{IDLE\_STATE}.
 \end{itemize}
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.55\textwidth]{img/fittag_fsm.png}
+    \includegraphics[width=0.8\textwidth]{img/fittag_fsm.png}
     \caption{Diagramma della Macchina a Stati Finiti del FitTag Band.}
     \label{fig:fittag_fsm}
 \end{figure}
 
-\subsection{Cose implementate nel codice degne di nota} % TODO: continuare da qua
-Per massimizzare l'efficienza energetica, l'architettura è fortemente basata sugli interrupt. Invece di eseguire il \textit{polling} continuo dei sensori, il microcontrollore sfrutta il pin di interrupt \texttt{INT1} dell'LSM6DS3TR-C, configurato per generare un segnale hardware quando la FIFO interna raggiunge una specifica soglia di riempimento. Solo al verificarsi dell'evento la CPU si risveglia, scarica il blocco di dati tramite I2C e li elabora, per poi tornare in uno stato di basso consumo.
-Per quanto rigurd i battiti non si usano interrupt pk viene fatto un polling molto lento.
+\subsection{Protocollo di comunicazione BLE}
+L'interscambio dati tra il wearable e l'applicazione mobile è basato sul protocollo Bluetooth Low Energy (BLE). Il dispositivo FitTag Band è configurato per esporre un servizio primario custom (\texttt{fitTagService}).
 
-\subsection{GATT BLE}
-Il livello di connettività è implementato attraverso uno stack BLE che espone servizi e caratteristiche customizzate. Il dispositivo opera come periferica (\textit{GATT Server}), accettando comandi di controllo sulla caratteristica di scrittura (RX) e trasmettendo in modo asincrono le notifiche (TX) contenenti i log dei sensori, le metriche sportive e le predizioni del modello algoritmico.
+Il servizio è strutturato in quattro caratteristiche distinte, ciascuna deputata a uno specifico flusso informativo:
+\begin{itemize}
+    \item \textbf{Control Characteristic (Write Only):} Permette all'applicazione mobile di inviare in modalità asincrona comandi di controllo di $1\,\text{byte}$. La ricezione di un comando attiva una routine di callback che valida la richiesta ed esegue la transizione di stato della macchina a stati finiti.
+    \item \textbf{Inference Characteristic (Notify):} Utilizzata per trasmettere in tempo reale il risultato della classificazione effettuata dal modello integrato. Invia un pacchetto a lunghezza fissa di $1\,\text{byte}$ contenente l'ID dell'attività rilevata.
+    \item \textbf{Data Log Characteristic (Notify):} Dedicata esclusivamente alla fase offline di raccolta dati cinematici. Sfrutta la modalità di notifica per inviare in modo efficiente array di strutture \texttt{IMUPayload} contenenti i campioni grezzi di accelerometro e giroscopio necessari per l'addestramento del modello.
+    \item \textbf{Workout Characteristic (Notify):} Trasmette a frequenza di $1\,\text{Hz}$ la telemetria riepilogativa dell'allenamento. Il pacchetto \texttt{WorkoutPayload} include il battito cardiaco, i passi totali registrati dal contapassi hardware, la cadenza calcolata e l'indice di intensità istantanea del movimento.
+\end{itemize}
 
-\section{Modello ML}
-La capacità di \textit{Human Activity Recognition} (HAR) del bracciale è resa possibile dall'implementazione \textit{on-device} di un classificatore ad albero, specificamente un \textit{Random Forest}, ottimizzato per l'esecuzione su sistemi embedded con risorse limitate (TinyML).
+Oltre al servizio custom, il firmware inizializza il servizio standard di monitoraggio della batteria (\texttt{batteryService}), consentendo all'app mobile di accedere alle informazioni sul livello di carica.
 
-Il firmware applica un approccio a finestra temporale scorrevole (\textit{Sliding Window}) sui dati grezzi di accelerometro e giroscopio. Per campionamenti a 13 Hz, il sistema accumula dati in una finestra di 5 secondi (65 campioni). Per garantire una reattività ottimale mantenendo un contesto storico sufficiente, la finestra avanza con uno scivolamento (\textit{overlap}) di 2 secondi (26 campioni), permettendo di generare una nuova predizione regolarmente senza perdere ciclicità nel movimento.
+\subsection{Scelte implementative e ottimizzazioni del firmware}
 
-Da ogni finestra temporale viene estratto un vettore di caratteristiche (\textit{features}) calcolando la media e la deviazione standard per ciascuno dei 6 assi inerziali. Il vettore risultante di 12 elementi in virgola mobile viene elaborato dal \textit{Random Forest}, il quale attraversa le diramazioni logiche generate in fase di addestramento e restituisce la classe di attività riconosciuta mediante un meccanismo di maggioranza sui voti degli alberi decisionali.
+In questa sezione vengono analizzate le principali scelte architetturali e le ottimizzazioni di basso livello introdotte nel firmware del FitTag Band.
+
+\subsubsection{Acquisizione dei dati sensoriali}
+Al fine di massimizzare l'efficienza energetica del sistema e prolungare l'autonomia della batteria, l'architettura del firmware adotta un modello orientato agli eventi, eliminando la necessità di eseguire il polling continuo delle periferiche.
+
+Nello specifico, la memoria interna del sensore LSM6DS3TR-C viene configurata in modalità FIFO; al raggiungimento di una determinata soglia di riempimento, l'hardware dell'IMU genera un impulso sul pin fisico di interrupt.
+Questo approccio consente di ridurre drasticamente i cicli di clock sprecati in attesa della disponibilità del dato.
+Il processore viene risvegliato dall'interrupt, esegue uno scaricamento a blocchi del buffer e rientra immediatamente nello stato di sleep.
+
+Come mostrato nel frammento di codice~\ref{lst:imu_int}, tale comportamento viene configurato settando il bit \texttt{INT1\_FTH} del registro \texttt{INT1\_CTRL} dell'LSM6DS3TR-C, il quale instrada l'evento di raggiungimento della soglia FIFO direttamente sul pad hardware \texttt{INT1}.
+
+\begin{lstlisting}[language=C++, caption={Configurazione del registro di controllo interrupt per l'unità inerziale.}, label=lst:imu_int]
+// Abilitazione interrupt su soglia FIFO (bit INT1_FTH, valore 0x08) 
+// e instradamento sul pin hardware INT1 dell'IMU
+IMU.writeRegister(LSM6DS3_ACC_GYRO_INT1_CTRL, 0x08);
+\end{lstlisting}
+
+Al contrario, la gestione dei parametri vitali rilevati dal sensore MAX30102 segue una strategia differente. Poiché le metriche cardiache presentano dinamiche temporali significativamente più lente rispetto alle accelerazioni generate dal movimento corporeo, l'acquisizione dei dati viene demandata a un ciclo di polling a bassa frequenza, sufficiente a garantire la stabilità di calcolo dell'algoritmo di estrazione dei battiti al minuto senza gravare sul budget energetico complessivo del dispositivo.
+
+\subsubsection{Configurazione del Block Data Update}
+Un problema critico nei sistemi di acquisizione dati ad alta frequenza è la lettura di campioni corrotti dovuta al disallineamento temporale tra i registri a 8 bit di parte bassa (LSB) e parte alta (MSB) dei sensori.
+Se la MCU esegue una lettura del registro LSB e, prima di completare la lettura del registro MSB, l'hardware del sensore aggiorna il dato a seguito di un nuovo ciclo di scrittura, il valore finale risulterà inevitabilmente falsato.
+
+Per prevenire questo fenomeno, all'avvio della fase di logging il firmware configura esplicitamente il registro di controllo \texttt{CTRL3\_C} dell'LSM6DS3TR-C asserendo il bit \texttt{BDU} (Block Data Update):
+
+\begin{lstlisting}[language=C++]
+uint8_t ctrl3_c;
+IMU.readRegister(&ctrl3_c, LSM6DS3_ACC_GYRO_CTRL3_C); 
+ctrl3_c |= 0x40; // Asserzione del bit BDU
+IMU.writeRegister(LSM6DS3_ACC_GYRO_CTRL3_C, ctrl3_c); 
+\end{lstlisting}
+
+Questa impostazione congela l'aggiornamento dei registri di output finché la CPU non ha completato la lettura sequenziale di entrambe le metà dello stesso campione, garantendo la lettura atomica dei vettori cinematici.
+
+\subsubsection{Calcolo dell'intensità istantanea dell'attività sportiva}
+Durante lo stato operativo di allenamento (\texttt{WORKOUT\_STATE}), il sistema deve calcolare l'intensità istantanea dell'attività fisica dell'utente.
+La lettura diretta dei singoli assi dell'accelerometro è tuttavia fortemente influenzata dall'orientamento spaziale del bracciale a causa dell'accelerazione di gravità sempre presente ($1\,\text{g}$). 
+
+Per rendere la metrica di intensità indipendente dall'orientamento del dispositivo, il firmware implementa il calcolo della magnitudo del vettore risultante mediante la formula:
+\begin{equation}
+    totalG = \sqrt{a_X^2 + a_Y^2 + a_Z^2}
+\end{equation}
+
+Successivamente, viene applicata una logica di compensazione della gravità sottraendo il valore costante di $1\,\text{g}$:
+\begin{equation}
+    movement = |totalG - 1|
+\end{equation}
+
+Isolando unicamente la componente dinamica del movimento, il firmware mappa linearmente il punteggio su una scala discreta da 1 (completamente fermo) a 10 (massima intensità).
+
+\subsubsection{Controllo del partitore di tensione per il sensing della batteria}
+La lettura analogica della tensione della batteria nei dispositivi a basso consumo introduce una criticità progettuale legata al consumo parassita costante.
+Un partitore di tensione resistivo tradizionalmente collegato in modo permanente provocherebbe infatti una scarica continua e lineare della batteria.
+Tale fenomeno risulterebbe attivo anche quando l'unità centrale si trova in modalità sleep, compromettendo drasticamente l'autonomia complessiva del dispositivo.
+
+Per ovviare a questo problema, l'architettura hardware del modulo Seeed Studio XIAO nRF52840 prevede la connessione di un ramo del partitore al pin digitale \texttt{VBAT\_ENABLE}.
+
+Il firmware sfrutta questa topologia implementando una strategia di attivazione on-demand: il partitore viene chiuso verso massa unicamente per la finestra temporale strettamente necessaria al campionamento della tensione da parte del convertitore analogico-digitale.
+Nella pratica, il pin \texttt{VBAT\_ENABLE} viene configurato come \texttt{OUTPUT} e settato a \texttt{LOW}. Questa transizione permette al pin di funzionare come pozzo di corrente, consentendo la corretta lettura della tensione.
+
+Subito dopo l'acquisizione del dato, il pin viene settato a \texttt{HIGH}. Il percorso di corrente verso la massa viene così interrotto, azzerando istantaneamente il consumo parassita.
+
+\begin{lstlisting}[language=C++, caption={Implementazione software della lettura della tensione della batteria.}]
+// Configurazione del pin di controllo e attivazione del partitore
+pinMode(VBAT_ENABLE, OUTPUT);
+digitalWrite(VBAT_ENABLE, LOW);
+
+// Acquisizione del valore di tensione grezzo
+int adc_value = analogRead(PIN_VBAT);
+
+// Disattivazione del partitore
+digitalWrite(VBAT_ENABLE, HIGH);
+\end{lstlisting}
+
+\subsubsection{Gestione della disconnessione BLE}
+La perdita improvvisa della connessione wireless durante un allenamento o una fase di data logging comporta il rischio che il dispositivo rimanga bloccato in uno stato operativo. Questo scenario causerebbe un campionamento indefinito dei sensori e un rapido esaurimento della batteria.
+Per prevenire questa condizione, il firmware implementa un meccanismo di fail-safe basato su una routine di callback asincrona (\texttt{disconnect\_callback}).
+
+Al verificarsi della perdita di segnale radio con lo smartphone, la callback intercetta l'evento e forza la variabile asincrona \texttt{nextState} al valore \texttt{IDLE\_STATE}. Al ciclo successivo del \texttt{loop()}, il sistema rileva il cambio di stato ed esegue la routine \texttt{hardwareSleepMode()}.
+Questo meccanismo garantisce che il wearable non rimanga mai bloccato in uno stato operativo in assenza di un host connesso.
+
+\subsubsection{Serializzazione dei dati e prevenzione del memory padding}
+Per ottimizzare lo streaming wireless via BLE e rispettare i vincoli di dimensione imposti dalla Maximum Transmission Unit (MTU), è fondamentale minimizzare la dimensione dei pacchetti trasmessi. All'interno del file \texttt{sharedTypes.h}, le strutture dati \texttt{IMUPayload} e \texttt{WorkoutPayload} sono state dichiarate applicando la direttiva di compilazione \texttt{\_\_attribute\_\_((packed))}.
+
+I compilatori per architetture a 32-bit, come il core ARM Cortex-M4 del SoC nRF52840, tendono ad allineare le variabili in memoria a indirizzi multipli di 4 byte, inserendo byte vuoti di riempimento (memory padding) per velocizzare i cicli di lettura della CPU. In un protocollo di rete, tuttavia, questo comportamento comporta due svantaggi critici: introduce un overhead inutile che consuma banda radio e altera la disposizione dei dati, impedendo una decodifica diretta da parte dell'applicazione mobile.
+
+L'uso del modificatore \texttt{packed} forza il compilatore a rimuovere i byte di riempimento. In questo modo, la dimensione finale della struttura corrisponde alla somma esatta dei suoi tipi primitivi.
+
+\section{Modello classificatore on-device}
+La capacità di riconoscimento delle attività del bracciale è resa possibile dall'implementazione on-device di un classificatore Random Forest.
+
+I dati grezzi di accelerometro e giroscopio, campionati a $13\,\text{Hz}$, vengono elaborati tramite una finestra scorrevole di $5\,\text{s}$ ($65$ campioni) con un overlap di $2\,\text{s}$ ($26$ campioni) per generare predizioni frequenti e stabili.
+
+Da ogni finestra temporale viene poi estratto un vettore di caratteristiche calcolando la media e la deviazione standard per ciascuno dei 6 assi inerziali. Il vettore risultante di 12 elementi in virgola mobile viene elaborato dal classificatore, il quale restituisce la classe di attività riconosciuta mediante un meccanismo di maggioranza sui voti degli alberi decisionali che implementa.
+
+\subsection{Scelta del classificatore}
+Per l'implementazione del modello, l'algoritmo Random Forest è stato preferito ad altre architetture (quali reti neurali o Support Vector Machines) per due ragioni principali:
+
+\begin{itemize}
+    \item \textbf{Esecuzione deterministica e assenza di algebra lineare:} A differenza delle reti neurali, che richiedono pesanti moltiplicazioni di matrici, una Random Forest viene compilata in codice C++ sotto forma di strutture condizionali. Questo si sposa perfettamente con l'architettura del device sprovvista di acceleratori hardware dedicati alle matrici.
+    \item \textbf{Gestione del rumore e robustezza all'overfitting:} Il movimento umano presenta forti componenti transitorie e variazioni repentine dovute ad artefatti cinetici. L'addestramento basato su ensemble di alberi decisionali indipendenti mitiga l'overfitting, garantendo stabilità di classificazione anche in presenza di segnali rumorosi.
+\end{itemize}
+
+\subsection{Pipeline di raccolta dati e preprocessing}
+L'addestramento del classificatore ha richiesto l'implementazione nel firmware di una modalità di data logging dedicata.
+I dati inerziali grezzi dell'accelerometro e del giroscopio vengono campionati alla frequenza fissa di $13\,\text{Hz}$ e trasmessi in tempo reale via BLE ad uno script Python per la raccolta ed etichettatura dei dati e l'estrazione da essi delle caratteristiche\footnote{\url{https://github.com/FitTag/fittag-data-collection}}.
+
+La segmentazione dello streaming temporale è stata eseguita applicando una finestra scorrevole ridotta, pari a $2\,\text{s}$ con un overlap di $1\,\text{s}$. Questa configurazione a risoluzione più elevata è stata adottata per massimizzare il numero di pattern estratti e catturare con precisione le transizioni rapide tra uno stato cinetico e l'altro. 
+
+Successivamente, per l'implementazione dell'inferenza on-device, la pipeline è stata ottimizzata estendendo la finestra a $5\,\text{s}$ con una sovrapposizione di $2\,\text{s}$. Questo incremento della dimensione della finestra consente di convertire i vettori temporali in caratteristiche statistiche più stabili, isolando il modello da falsi positivi causati da accelerazioni imporvvise o da movimenti estranei all'attività sportiva.
+
+\subsection{Addestramento e ottimizzazione del modello per i vincoli hardware}
+Il modello di classificazione è stato sviluppato in ambiente Python tramite la libreria Scikit-Learn.\footnote{\url{https://github.com/FitTag/fittag-model-training}}
+Poiché l'inferenza viene eseguita direttamente sul microcontrollore nRF52840 (caratterizzato da $2\,\text{MB}$ di memoria Flash e $256\,\text{kB}$ di RAM), la selezione degli iperparametri della Random Forest è stata guidata da un approccio empirico basato su test incrementali e sul rispetto dei vincoli architetturali del SoC.
+
+La combinazione finale degli iperparametri è il risultato di un bilanciamento manuale volto a mantenere l'accuratezza globale sopra il $98\%$ senza saturare le risorse hardware:
+
+\begin{itemize}
+    \item \textbf{\texttt{n\_estimators} = 15}: Il numero di alberi decisionali è stato limitato a 15 dopo aver constatato sperimentalmente che un numero maggiore di stimatori non portava incrementi significativi di accuratezza, ma aumentava linearmente le righe di codice C++ generate.
+    \item \textbf{\texttt{max\_depth} = 6}: La profondità massima degli alberi è stata vincolata a 6 per garantire un limite superiore costante ai cicli CPU richiesti da ogni singola inferenza.
+\end{itemize}
+
+Questo bilanciamento empirico ha permesso di ottenere un modello leggero, rapido nell'inferenza e preciso, perfettamente integrato con le routine real-time del firmware.
+
+\subsection{Integrazione del modello on-device}
+Per consentire l'esecuzione del modello sul microcontrollore nRF52840, l'ensemble di alberi decisionali è stato convertito in codice sorgente C++ nativo tramite la libreria open-source \texttt{micromlgen}. Questo ``compilatore'' traduce l'architettura della Random Forest in una serie di costrutti condizionali annidati if-else.
+
+Il codice generato viene interamente allocato nella memoria Flash del SoC sotto forma di funzione statica, garantendo un tempo di calcolo legato esclusivamente alla massima profondità impostata per gli alberi.
