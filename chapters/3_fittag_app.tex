@@ -10,32 +10,6 @@ L'infrastruttura dell'applicazione si basa su una progettazione guidata dagli ev
     \item \textbf{Visualizzazione biometrica:} La rappresentazione grafica delle metriche sportive è affidata ad una libreria dedicata che consente di visualizzare grafici temporali a linee con tooltip interattivi attivati al tocco.
 \end{itemize}
 
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[t]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/app/home_screen.png}
-        \caption{Home Screen}
-        \label{fig:home_screen}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/app/workout_screen.png}
-        \caption{Allenamento attivo}
-        \label{fig:workout_active}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/app/settings_screen.png}
-        \caption{Impostazioni}
-        \label{fig:settings_screen}
-    \end{subfigure}
-    \caption{Schermate dell'applicazione FitTag App.}
-    \label{fig:app_screens}
-\end{figure}
-
 \section{Protocollo di comunicazione BLE}
 L'interazione tra l'applicazione e il bracciale FitTag Band avviene attraverso lo stack protocollare Bluetooth Low Energy (BLE), in cui lo smartphone assume il ruolo di GATT Client e il wearable funge da GATT Server.
 
@@ -148,6 +122,13 @@ Il widget principale è una card dotata di un gradiente cromatico dinamico: quan
 All'apertura della schermata Home, l'applicazione (se connessa al FitTag Band) avvia automaticamente la sincronizzazione del livello della batteria trasmettendo il comando \texttt{BATT\_LVL} (2) sulla caratteristica di controllo. Dopo un intervallo di attesa di $700\,\text{ms}$, l'applicazione legge la percentuale aggiornata dalla caratteristica del Battery Service standard ed aggiorna l'interfaccia utente.
 Il livello della batteria viene mostrato graficamente con icone incrementali. La schermata Home ospita inoltre le statistiche aggregate ricavate dallo storico e il pulsante per avviare un nuovo allenamento.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{img/app/home_screen.png}
+    \caption{Schermata principale (Home Screen).}
+    \label{fig:home_screen}
+\end{figure}
+
 \subsection{Schermata di allenamento}
 Quando l'utente avvia un allenamento, l'applicazione forza la transizione del bracciale nello stato \texttt{WORKOUT} (5) ed effettua la sottoscrizione ai messaggi di notifica della caratteristica \texttt{workoutChar}. Le letture avvengono con una cadenza di circa $1\,\text{Hz}$. Ciascun pacchetto dati trasmesso dal bracciale ha una dimensione di esattamente 5 byte. L'applicazione decodifica il pacchetto binario ricevuto per ricostruire le seguenti metriche:
 \begin{itemize}
@@ -179,6 +160,13 @@ In base al rapporto percentuale tra la frequenza cardiaca istantanea ed il valor
 \end{itemize}
 Alla pressione del tasto di fine allenamento, l'app rimuove la sottoscrizione alle notifiche, ordina alla band di tornare allo stato \texttt{IDLE}, impacchetta la serie temporale accumulata e la scrive in formato JSON.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{img/app/workout_screen.png}
+    \caption{Schermata di allenamento attivo.}
+    \label{fig:workout_active}
+\end{figure}
+
 \subsection{Dettaglio dell'allenamento}
 Selezionando una sessione di allenamento salvata, l'interfaccia utente mostra una schermata di dettaglio analitico (Figura~\ref{fig:workout_detail_screen}). L'app analizza l'intero vettore delle serie temporali dei dati registrati per estrarre informazioni aggregate: il battito cardiaco medio e massimo, la cadenza media e quella di picco, e il profilo temporale dell'intensità dello sforzo.
 
@@ -198,20 +186,9 @@ Questi dati vengono visualizzati attraverso un elenco descrittivo affiancato da 
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[t]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/app/inference_screen.png}
-        \caption{Schermata di inferenza}
-        \label{fig:inference_screen}
-    \end{subfigure}
-    \hspace{1cm}
-    \begin{subfigure}[t]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/app/workout_detail_screen.png}
-        \caption{Grafici di dettaglio allenamento}
-        \label{fig:workout_detail_screen}
-    \end{subfigure}
-    \caption{Visualizzazioni dell'inferenza in tempo reale ed analisi dei grafici temporali.}
+    \includegraphics[width=0.3\textwidth]{img/app/workout_detail_screen.png}
+    \caption{Schermata di dettaglio dell'allenamento.}
+    \label{fig:workout_detail_screen}
 \end{figure}
 
 \subsection{Schermata di inferenza}
@@ -229,6 +206,13 @@ I codici numerici inviati dal bracciale su \texttt{inferChar} vengono decodifica
     \item \textbf{Classe 2 (Running):} corsa. L'app mostra un'icona di persona che corre. Per rispecchiare l'elevato ritmo motorio, la pulsazione grafica della cornice viene accelerata.
 \end{itemize}
 Questo meccanismo di variazione dinamica della frequenza di pulsazione visiva fornisce all'utente una percezione immediata della dinamica dell'attività fisica in corso.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{img/app/inference_screen.png}
+    \caption{Schermata di inferenza dell'attività.}
+    \label{fig:inference_screen}
+\end{figure}
 
 \subsection{Schermata delle impostazioni}
 La schermata Settings (Figura~\ref{fig:settings_screen}) raggruppa le funzioni di connessione hardware e di gestione dello storage locale. 
@@ -249,3 +233,10 @@ Alla pressione del tasto di salvataggio, l'età selezionata viene utilizzata per
 
 \paragraph{Gestione dati locali}
 Infine, la schermata ospita la sezione di gestione della memoria locale. L'utente ha la possibilità di cancellare la cronologia degli allenamenti memorizzati. Trattandosi di un'operazione distruttiva, l'app implementa un flusso di sicurezza: la pressione del pulsante apre un modale personalizzato che spiega le conseguenze dell'operazione. Solo alla conferma esplicita dell'utente viene effettuata la pulizia dei dati in memoria.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{img/app/settings_screen.png}
+    \caption{Schermata delle impostazioni.}
+    \label{fig:settings_screen}
+\end{figure}
