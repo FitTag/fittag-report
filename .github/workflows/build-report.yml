@@ -54,6 +54,7 @@ jobs:
         with:
           docker_image: ${{ env.docker_image }}:${{ env.docker_image_tag }}
           root_file: report.tex
+          working_directory: .
           latexmk_shell_escape: true
 
       - name: Upload PDF as artifact
