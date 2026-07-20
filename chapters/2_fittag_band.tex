@@ -2,7 +2,7 @@
 L'infrastruttura computazionale della FitTag Band è incentrata sul System on Chip (SoC) Seeed Studio XIAO nRF52840 Sense Plus.
 Questa piattaforma è stata selezionata per la sua elevata densità di integrazione, ospitando nativamente un'unità di misuramento inerziale (IMU), un ricetrasmettitore per la connettività wireless e il circuito integrato BQ25101, un controller dedicato alla ricarica e alla gestione in sicurezza della batteria ai polimeri di litio (LiPo).
 
-La rilevazione cinematica del movimento è affidata al sensore LSM6DS3TR-C, un'IMU a 6 assi che combina un accelerometro e un giroscopio. Il sensore dispone di una memoria FIFO hardware da $4\,\text{kB}$, configurata per l'accumulo temporaneo dei campioni al fine di ridurre il carico della CPU.
+La rilevazione del movimento è affidata al sensore LSM6DS3TR-C, un'IMU a 6 assi che combina un accelerometro e un giroscopio. Il sensore dispone di una memoria FIFO hardware da $4\,\text{kB}$, configurata per l'accumulo temporaneo dei campioni al fine di ridurre il carico della CPU.
 L'interfacciamento con l'unità di elaborazione avviene mediante bus seriale $I^2C$ e sfrutta linee di interrupt hardware dedicate per segnalare in modalità asincrona la disponibilità di nuovi dati, ottimizzando i consumi energetici complessivi.
 
 Il monitoraggio dei parametri vitali è invece deputato al sensore esterno MAX30102. Questa unità integra due LED, uno nello spettro del rosso a $660\,nm$ e uno nell'infrarosso a $880\,nm$, accoppiati a un fotorilevatore ad alta sensibilità.
@@ -32,7 +32,7 @@ La FSM è strutturata sui seguenti stati:
     \item \textbf{\texttt{BATT\_LVL\_STATE}:} Stato temporaneo deputato alla lettura della tensione della batteria tramite il convertitore analogico-digitale (ADC). La percentuale di carica residua calcolata viene inviata al client BLE prima di far ritornare automaticamente il dispositivo in \texttt{IDLE\_STATE}.
 \end{itemize}
 
-\begin{figure}[h!]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{img/fittag_fsm.png}
     \caption{Diagramma della Macchina a Stati Finiti del FitTag Band.}
@@ -104,7 +104,7 @@ Successivamente, viene applicata una logica di compensazione della gravità sott
 
 Isolando unicamente la componente dinamica del movimento, il firmware mappa linearmente il punteggio su una scala discreta da 1 (completamente fermo) a 10 (massima intensità).
 
-\subsubsection{Controllo del partitore di tensione per il sensing della batteria}
+\subsubsection{Controllo del partitore di tensione per la lettura della batteria}
 La lettura analogica della tensione della batteria nei dispositivi a basso consumo introduce una criticità progettuale legata al consumo parassita costante.
 Un partitore di tensione resistivo tradizionalmente collegato in modo permanente provocherebbe infatti una scarica continua e lineare della batteria.
 Tale fenomeno risulterebbe attivo anche quando l'unità centrale si trova in modalità sleep, compromettendo drasticamente l'autonomia complessiva del dispositivo.
@@ -145,7 +145,7 @@ L'uso del modificatore \texttt{packed} forza il compilatore a rimuovere i byte d
 \section{Modello classificatore on-device}
 La capacità di riconoscimento delle attività del bracciale è resa possibile dall'implementazione on-device di un classificatore Random Forest.
 
-I dati grezzi di accelerometro e giroscopio, campionati a $13\,\text{Hz}$, vengono elaborati tramite una finestra scorrevole di $5\,\text{s}$ ($65$ campioni) con un overlap di $2\,\text{s}$ ($26$ campioni) per generare predizioni frequenti e stabili.
+I dati grezzi di accelerometro e giroscopio, campionati a $13\,\text{Hz}$, vengono elaborati tramite una finestra scorrevole di $4\,\text{s}$ ($52$ campioni) con un overlap di $2\,\text{s}$ ($26$ campioni) per generare predizioni frequenti e stabili.
 
 Da ogni finestra temporale viene poi estratto un vettore di caratteristiche calcolando la media e la deviazione standard per ciascuno dei 6 assi inerziali. Il vettore risultante di 12 elementi in virgola mobile viene elaborato dal classificatore, il quale restituisce la classe di attività riconosciuta mediante un meccanismo di maggioranza sui voti degli alberi decisionali che implementa.
 
@@ -163,7 +163,7 @@ I dati inerziali grezzi dell'accelerometro e del giroscopio vengono campionati a
 
 La segmentazione dello streaming temporale è stata eseguita applicando una finestra scorrevole ridotta, pari a $2\,\text{s}$ con un overlap di $1\,\text{s}$. Questa configurazione a risoluzione più elevata è stata adottata per massimizzare il numero di pattern estratti e catturare con precisione le transizioni rapide tra uno stato cinetico e l'altro. 
 
-Successivamente, per l'implementazione dell'inferenza on-device, la pipeline è stata ottimizzata estendendo la finestra a $5\,\text{s}$ con una sovrapposizione di $2\,\text{s}$. Questo incremento della dimensione della finestra consente di convertire i vettori temporali in caratteristiche statistiche più stabili, isolando il modello da falsi positivi causati da accelerazioni imporvvise o da movimenti estranei all'attività sportiva.
+Successivamente, per l'implementazione dell'inferenza on-device, la pipeline è stata ottimizzata estendendo la finestra a $4\,\text{s}$ con una sovrapposizione di $2\,\text{s}$. Questo incremento della dimensione della finestra consente di convertire i vettori temporali in caratteristiche statistiche più stabili, isolando il modello da falsi positivi causati da accelerazioni imporvvise o da movimenti estranei all'attività sportiva.
 
 \subsection{Addestramento e ottimizzazione del modello per i vincoli hardware}
 Il modello di classificazione è stato sviluppato in ambiente Python tramite la libreria Scikit-Learn.\footnote{\url{https://github.com/FitTag/fittag-model-training}}

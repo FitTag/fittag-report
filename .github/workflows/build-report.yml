@@ -1,0 +1,95 @@
+name: Build and Release PDF
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**"
+      - '.github/workflows/build-report.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**"
+      - '.github/workflows/build-report.yml'
+
+env:
+  docker_image: ghcr.io/xu-cheng/texlive-alpine
+  docker_image_tag: 20260401
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Cache Docker image
+        id: cache-pull
+        uses: actions/cache@v5
+        with:
+          path: ~/.docker/cache
+          key: ${{ runner.os }}-docker-${{ env.docker_image }}-${{ env.docker_image_tag }}
+
+      - name: Pull Docker image and save to cache
+        if: steps.cache-pull.outputs.cache-hit != 'true'
+        run: |
+          docker pull ${{ env.docker_image }}:${{ env.docker_image_tag }}
+          mkdir -p ~/.docker/cache
+          cache_file="$(echo "${{ env.docker_image }}-${{ env.docker_image_tag }}" | tr '/:' '-')"
+          docker save ${{ env.docker_image }}:${{ env.docker_image_tag }} > ~/.docker/cache/${cache_file}
+
+      - name: Load Docker image from cache
+        if: steps.cache-pull.outputs.cache-hit == 'true'
+        run: |
+          cache_file="$(echo "${{ env.docker_image }}-${{ env.docker_image_tag }}" | tr '/:' '-')"
+          docker load < ~/.docker/cache/${cache_file}
+
+      - name: Compile LaTeX
+        uses: xu-cheng/latex-action@v3
+        with:
+          docker_image: ${{ env.docker_image }}:${{ env.docker_image_tag }}
+          root_file: report.tex
+          latexmk_shell_escape: true
+
+      - name: Upload PDF as artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: "FitTag Report"
+          path: report.pdf
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download PDF artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: "FitTag Report"
+          path: report
+
+      - name: Delete old release and tag
+        run: |
+          gh release delete latest --cleanup-tag --yes --repo ${{ github.repository }} 2>/dev/null || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: latest
+          target_commitish: ${{ github.sha }}
+          name: "FitTag Report"
+          body: "Latest version of the report."
+          files: report.pdf
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
