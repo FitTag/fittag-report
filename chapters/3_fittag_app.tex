@@ -1,5 +1,5 @@
 \section{Architettura software}
-L'applicazione mobile di \textbf{FitTag} è sviluppata in linguaggio Dart sfruttando il framework \textbf{Flutter}. 
+L'applicazione mobile di FitTag è sviluppata in linguaggio Dart sfruttando il framework Flutter. 
 Questa scelta tecnologica consente di mantenere un'unica base di codice per le piattaforme Android e iOS, garantendo al contempo prestazioni native e un'interfaccia utente altamente responsiva e personalizzata.
 
 L'infrastruttura dell'applicazione si basa su una progettazione guidata dagli eventi, strutturata sui seguenti componenti principali:
@@ -10,7 +10,7 @@ L'infrastruttura dell'applicazione si basa su una progettazione guidata dagli ev
     \item \textbf{Visualizzazione biometrica:} La rappresentazione grafica delle metriche sportive è affidata ad una libreria dedicata che consente di visualizzare grafici temporali a linee con tooltip interattivi attivati al tocco.
 \end{itemize}
 
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}[t]{0.3\textwidth}
         \centering
@@ -37,20 +37,20 @@ L'infrastruttura dell'applicazione si basa su una progettazione guidata dagli ev
 \end{figure}
 
 \section{Protocollo di comunicazione BLE}
-L'interazione tra l'applicazione companion e il bracciale FitTag Band avviene attraverso lo stack protocollare Bluetooth Low Energy (BLE), in cui lo smartphone assume il ruolo di \textit{GATT Client} e il wearable funge da \textit{GATT Server}. Questo modello di comunicazione asincrono consente di minimizzare il tempo di attivazione del modulo radio, riducendo drasticamente il consumo energetico di entrambi i dispositivi.
+L'interazione tra l'applicazione e il bracciale FitTag Band avviene attraverso lo stack protocollare Bluetooth Low Energy (BLE), in cui lo smartphone assume il ruolo di GATT Client e il wearable funge da GATT Server.
 
-La scoperta del bracciale avviene tramite una scansione wireless mirata, implementata all'interno del metodo \texttt{scanForDevices()} del servizio \texttt{FitTagBleService}. Per evitare di mostrare all'utente una lista congestionata da altri dispositivi Bluetooth circostanti (quali auricolari o smart TV), l'app applica un filtro di scansione basato esclusivamente sul \textbf{Service UUID} custom esposto dal firmware (\texttt{19b10000-e8f2-537e-4f6c-d104768a1214}). Una volta agganciato il dispositivo prescelto, il client avvia il processo di \textit{Service Discovery} per mappare le caratteristiche GATT esposte. Le caratteristiche operative utilizzate per coordinare lo scambio dati e la sincronizzazione dello stato sono descritte dettagliatamente nella Tabella~\ref{tab:ble_characteristics}.
+La scoperta del bracciale avviene tramite una scansione wireless mirata, implementata all'interno del metodo \texttt{scanForDevices()} del servizio \texttt{FitTagBleService}. Per evitare di mostrare all'utente una lista congestionata da altri dispositivi Bluetooth circostanti (quali auricolari o smart TV), l'app applica un filtro di scansione basato esclusivamente sul Service UUID custom esposto dal firmware (\texttt{19b10000-e8f2-537e-4f6c-d104768a1214}). Una volta agganciato il dispositivo prescelto, il client avvia il processo di Service Discovery per mappare le caratteristiche GATT esposte. Le caratteristiche operative utilizzate per coordinare lo scambio dati e la sincronizzazione dello stato sono descritte dettagliatamente nella Tabella~\ref{tab:ble_characteristics}.
 
-\begin{table}[ht]
+\begin{table}[H]
     \centering
     \small
     \renewcommand{\arraystretch}{1.4}
     \begin{tabular}{>{\raggedright\arraybackslash}p{4.2cm} >{\raggedright\arraybackslash}p{2.0cm} >{\raggedright\arraybackslash}p{6.6cm}}
         \hline
         \textbf{Caratteristica / UUID} & \textbf{Proprietà} & \textbf{Descrizione operativa} \\ \hline
-        \texttt{ctrlChar} \newline {\tiny\texttt{19b10001-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Scrittura, Lettura & Utilizzata per l'invio di comandi di cambio stato (payload a singolo byte). Consente all'applicazione di controllare la macchina a stati del bracciale. \\ \hline
-        \texttt{dataLogChar} \newline {\tiny\texttt{19b10002-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Notifica & Trasmissione ad alta frequenza dei dati dei sensori inerziali grezzi (accelerometro e giroscopio), impiegata per la calibrazione e la raccolta dati. \\ \hline
-        \texttt{workoutChar} \newline {\tiny\texttt{19b10003-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Notifica & Canale per la notifica dei dati elaborati (frequenza cardiaca, passi, cadenza, livello di sforzo) durante la sessione di allenamento. \\ \hline
+        \texttt{ctrlChar} \newline {\tiny\texttt{19b10001-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Scrittura & Utilizzata per l'invio di comandi di cambio stato (payload a singolo byte). Consente all'applicazione di controllare la macchina a stati del bracciale. \\ \hline
+        \texttt{dataLogChar} \newline {\tiny\texttt{19b10002-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Notifica & Trasmissione ad alta frequenza dei dati dei sensori inerziali grezzi (accelerometro e giroscopio), impiegata per la raccolta dati. \\ \hline
+        \texttt{workoutChar} \newline {\tiny\texttt{19b10003-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Notifica & Canale per la notifica dei dati elaborati (frequenza cardiaca, passi, cadenza, intensità) durante la sessione di allenamento. \\ \hline
         \texttt{inferChar} \newline {\tiny\texttt{19b10004-\allowbreak e8f2-\allowbreak 537e-\allowbreak 4f6c-\allowbreak d104768a1214}} & Notifica & Invio in tempo reale delle predizioni dell'attività calcolate dal modello di classificazione a bordo del bracciale. \\ \hline
         \texttt{batteryLevelChar} \newline {\tiny\texttt{00002a19-\allowbreak 0000-\allowbreak 1000-\allowbreak 8000-\allowbreak 00805f9b34fb}} & Lettura & Caratteristica dello standard Battery Service che espone la percentuale di carica residua della batteria del wearable. \\ \hline
     \end{tabular}
@@ -59,21 +59,21 @@ La scoperta del bracciale avviene tramite una scansione wireless mirata, impleme
 \end{table}
 
 \subsection{Gestione delle transizioni di stato}
-La macchina a stati finiti (FSM) che regola il funzionamento del bracciale è progettata per preservare l'hardware e ottimizzare i consumi. Per questo motivo, il dispositivo non consente il passaggio diretto tra due modalità attive (como ad esempio passare direttamente dalla modalità di allenamento a quella di inferenza). Qualsiasi transizione tra le diverse modalità operative deve obbligatoriamente passare per lo stato di riposo, denominato \texttt{IDLE\_STATE}.
+La macchina a stati finiti che regola il funzionamento del bracciale è progettata per preservare le risorse hardware e ottimizzare l'efficienza energetica. Per questa ragione, l'architettura non prevede il passaggio diretto tra due modalità operative diverse (ad esempio il passaggio diretto da allenamento ad inferenza), bensì richiede che ogni cambio di modalità passi attraverso lo stato di riposo \texttt{IDLE}.
 
-A livello software, l'applicazione gestisce questa limitazione coordinando una sequenza temporizzata per ogni cambio di stato:
+A livello software, l'applicazione gestisce le transizioni tra le modalità operative orchestrando un protocollo di cambio stato in tre fasi:
 \begin{enumerate}
-    \item L'applicazione invia al bracciale un comando per forzare il ritorno allo stato di riposo.
-    \item L'applicazione attende una brevissima pausa di assestamento di circa $150ms$. Questo intervallo consente al dispositivo di spegnere i moduli hardware precedentemente attivi e prepararsi alla ricezione di una nuova modalità.
-    \item Viene inviato il comando per attivare lo stato di destinazione desiderato.
+    \item L'applicazione invia al bracciale il comando per riportare il sistema nello stato \texttt{IDLE}.
+    \item L'applicazione rispetta un intervallo di assestamento di $150\,\text{ms}$, permettendo al firmware di disattivare le periferiche precedentemente in uso e rilasciare le risorse hardware associate.
+    \item Viene trasmesso il comando di attivazione per lo stato di destinazione selezionato dall'utente.
 \end{enumerate}
-Questo meccanismo sequenziale previene eventuali blocchi o conflitti di configurazione a livello dei sensori del bracciale, garantendo la stabilità del collegamento wireless.
+Questo approccio garantisce il corretto isolamento dei contesti esecutivi e previene conflitti di riconfigurazione dei sensori del bracciale, assicurando la stabilità del collegamento wireless.
 
 \subsection{Verifica periodica della connessione}
 A causa della natura del collegamento wireless, il bracciale può allontanarsi o disconnettersi senza che il sistema operativo del telefono segnali immediatamente l'evento. Per evitare che l'applicazione mostri il bracciale come connesso quando in realtà non lo è, è stato implementato un meccanismo di controllo periodico della connessione che opera con due logiche distinte:
 \begin{itemize}
     \item \textbf{In stato di riposo:} L'applicazione esegue una lettura periodica del livello di batteria ogni $4$ secondi. Se questa comunicazione fallisce o non risponde entro un certo limite di tempo, il collegamento viene considerato interrotto e l'applicazione aggiorna lo stato dell'interfaccia utente a disconnesso.
-    \item \textbf{In stato di trasmissione attiva (allenamento o inferenza):} Poiché il bracciale invia già dati in modo continuo, l'applicazione verifica semplicemente la regolarità della ricezione di questi pacchetti. Se non si ricevono aggiornamenti per più di $5$ secondi consecutivi, l'applicazione rileva la perdita del segnale, interrompe la sessione attiva salvando i dati parziali accumulati e si riconnette in stato disconnesso.
+    \item \textbf{In stato di trasmissione attiva (allenamento o inferenza):} Poiché il bracciale invia già dati in modo continuo, l'applicazione verifica semplicemente la regolarità della ricezione di questi pacchetti. Se non si ricevono aggiornamenti per più di $5$ secondi consecutivi, l'applicazione rileva la perdita del segnale, interrompe la sessione attiva salvando i dati parziali accumulati.
 \end{itemize}
 
 \subsection{Diagramma di sequenza delle interazioni}
@@ -99,10 +99,10 @@ Per comprendere appieno come l'applicazione e la smart band si scambino informaz
         
         % Phase 1: Connection & Battery
         \draw[msg] (0, -1) -- node[above, lbl] {Connessione BLE e Service Discovery} (7, -1);
-        \draw[msg] (0, -2) -- node[above, lbl] {Write ctrlChar: \texttt{idle} (1) e poi \texttt{battLvl} (2)} (7, -2);
+        \draw[msg] (0, -2) -- node[above, lbl] {Write ctrlChar: \texttt{BATT\_LVL} (2)} (7, -2);
         
         % Band self loop/state
-        \draw[thick] (7, -2.5) -- (7.5, -2.5) -- (7.5, -3) -- node[right, font=\tiny\itshape, align=left] {Rilevazione ADC\\Tensione Batteria} (7.1, -3);
+        \draw[thick] (7, -2.5) -- (7.5, -2.5) -- (7.5, -3) -- node[right, font=\tiny\itshape, align=left] {Lettura Tensione\\Batteria} (7.1, -3);
         \draw[msg] (7.1, -3) -- (7, -3);
         
         \draw[msg] (7, -3.8) -- node[above, lbl] {Aggiornamento valore batteryLevelChar} (7.5, -3.8) -- (7.5, -4.3) -- (7.1, -4.3);
@@ -114,17 +114,17 @@ Per comprendere appieno come l'applicazione e la smart band si scambino informaz
         \draw[dotted, thick] (-1, -5.3) -- (8, -5.3) node[pos=0.5, fill=white, font=\tiny\bfseries] {FLUSSO DI ALLENAMENTO (WORKOUT)};
         
         % Phase 2: Workout
-        \draw[msg] (0, -5.9) -- node[above, lbl] {Write ctrlChar: \texttt{workout} (5)} (7, -5.9);
+        \draw[msg] (0, -5.9) -- node[above, lbl] {Write ctrlChar: \texttt{WORKOUT} (5)} (7, -5.9);
         \draw[msg] (0, -6.6) -- node[above, lbl] {Sottoscrizione notifiche workoutChar} (7, -6.6);
         \draw[msg] (7, -7.4) -- node[above, lbl] {Notifica: telemetry (5 byte, $\approx 1\,\text{Hz}$)} (0, -7.4);
         \draw[msg] (7, -8.2) -- node[above, lbl] {Notifica: telemetry (5 byte, $\approx 1\,\text{Hz}$)} (0, -8.2);
-        \draw[msg] (0, -9.0) -- node[above, lbl] {Write ctrlChar: \texttt{idle} (1) (Stop Workout)} (7, -9.0);
+        \draw[msg] (0, -9.0) -- node[above, lbl] {Write ctrlChar: \texttt{IDLE} (1) (Stop Workout)} (7, -9.0);
         
         % Separator
         \draw[dotted, thick] (-1, -9.5) -- (8, -9.5) node[pos=0.5, fill=white, font=\tiny\bfseries] {FLUSSO DI INFERENZA (INFERENCE)};
         
         % Phase 3: Inference
-        \draw[msg] (0, -10.1) -- node[above, lbl] {Write ctrlChar: \texttt{infer} (3)} (7, -10.1);
+        \draw[msg] (0, -10.1) -- node[above, lbl] {Write ctrlChar: \texttt{INFER} (3)} (7, -10.1);
         \draw[msg] (7, -10.9) -- node[above, lbl] {Notifica inferChar: Activity Code (0, 1, 2)} (0, -10.9);
         
     \end{tikzpicture}
@@ -134,28 +134,22 @@ Per comprendere appieno come l'applicazione e la smart band si scambino informaz
 
 Il flusso di messaggi si articola in tre macro-fasi sequenziali o alternative:
 \begin{enumerate}
-    \item \textbf{Inizializzazione e sincronizzazione batteria:} all'avvio del collegamento, l'app interroga la periferica. Per leggere la carica residua, viene eseguito l'instradamento passante per lo stato di riposo (\texttt{idle}) prima di scrivere \texttt{battLvl} (2). Il bracciale campiona la tensione della batteria tramite l'ADC integrato, scrive la percentuale stimata sulla caratteristica standard del \textit{Battery Level} (\texttt{0x2A19}) e si rimette in standby autonomamente. L'app esegue quindi una lettura sincrona sulla medesima caratteristica per aggiornare l'interfaccia.
-    \item \textbf{Sessione di allenamento (workout):} alla pressione del tasto di avvio, l'applicazione ordina la transizione del bracciale allo stato \texttt{workout} (5) e si iscrive alle notifiche del canale \texttt{workoutChar}. Da questo momento, il bracciale campiona attivamente la frequenza cardiaca ed i passi tramite i sensori integrati, trasmettendo pacchetti di telemetria da 5 byte a cadenza regolare ($\approx 1\,\text{Hz}$) fino a quando l'utente non interrompe la sessione riportando il dispositivo a riposo.
-    \item \textbf{Classificazione edge AI (inference):} quando l'utente naviga sulla schermata di inferenza, l'app richiede lo stato \texttt{infer} (3). La band esegue l'HAR a bordo e invia notifiche asincrone su \texttt{inferChar} contenenti gli indici delle attività (0 per riposo, 1 per camminata, 2 per corsa), che vengono decodificate dall'applicazione per sincronizzare la pulsazione delle icone della UI.
+    \item \textbf{Inizializzazione e sincronizzazione batteria:} all'avvio della connessione, l'applicazione richiede l'aggiornamento della carica trasmettendo il comando \texttt{BATT\_LVL} (2) sulla caratteristica di controllo. Successivamente, l'app esegue una lettura sulla caratteristica standard del Battery Level (\texttt{0x2A19}) per acquisire la percentuale residua ed aggiornare l'interfaccia utente.
+    \item \textbf{Sessione di allenamento (workout):} alla pressione del tasto di avvio, l'applicazione ordina la transizione del bracciale allo stato \texttt{WORKOUT} (5) e si iscrive alle notifiche del canale \texttt{workoutChar}. Da questo momento, il bracciale campiona attivamente la frequenza cardiaca ed i passi tramite i sensori integrati, trasmettendo pacchetti di telemetria da 5 byte a cadenza regolare ($\approx 1\,\text{Hz}$) fino a quando l'utente non interrompe la sessione riportando il dispositivo a riposo.
+    \item \textbf{Inferenza dell'attività (inference):} quando l'utente naviga sulla schermata di inferenza, l'app richiede lo stato \texttt{INFER} (3). La band esegue la classificazione dell'attività a bordo e invia notifiche asincrone su \texttt{inferChar} contenenti gli indici delle attività (0 per riposo, 1 per camminata, 2 per corsa), che vengono decodificate dall'applicazione per sincronizzare la pulsazione delle icone della UI.
 \end{enumerate}
 
 \section{Interfaccia utente}
 
 \subsection{Schermata principale}
-La schermata Home (Figura~\ref{fig:home_screen}) rappresenta il punto di ingresso principale dell'utente. Essa è progettata secondo canoni estetici moderni, riflettendo l'identità visiva dell'ecosistema FitTag. 
+La schermata Home (Figura~\ref{fig:home_screen}) rappresenta il punto di ingresso principale dell'utente.
 Il widget principale è una card dotata di un gradiente cromatico dinamico: quando il bracciale è connesso, la card assume una tonalità verde smeraldo brillante, mentre in caso di disconnessione assume una colorazione marrone scuro, fornendo un feedback visivo immediato.
 
-All'apertura della schermata Home, l'applicazione (se connessa al FitTag Band) avvia automaticamente il processo di sincronizzazione del livello della batteria. 
-Questo flusso richiede un coordinamento specifico per via del funzionamento hardware descritto:
-\begin{enumerate}
-    \item L'app richiede la transizione passante per l'idle, ponendo il bracciale in \texttt{BATT\_LVL\_STATE} (2).
-    \item Il firmware del bracciale si risveglia, abilita il convertitore analogico-digitale (ADC), campiona la tensione presente sui pin di alimentazione, calcola la percentuale stimata, scrive tale valore all'interno della caratteristica standard del \textit{Battery Level} e ritorna automaticamente in \texttt{IDLE}.
-    \item L'applicazione attende un tempo di campionamento stimato in $700ms$, dopodiché interroga in lettura il Battery Service standard memorizzando la percentuale letta.
-\end{enumerate}
+All'apertura della schermata Home, l'applicazione (se connessa al FitTag Band) avvia automaticamente la sincronizzazione del livello della batteria trasmettendo il comando \texttt{BATT\_LVL} (2) sulla caratteristica di controllo. Dopo un intervallo di attesa di $700\,\text{ms}$, l'applicazione legge la percentuale aggiornata dalla caratteristica del Battery Service standard ed aggiorna l'interfaccia utente.
 Il livello della batteria viene mostrato graficamente con icone incrementali. La schermata Home ospita inoltre le statistiche aggregate ricavate dallo storico e il pulsante per avviare un nuovo allenamento.
 
 \subsection{Schermata di allenamento}
-Quando l'utente avvia un allenamento, l'applicazione forza la transizione del bracciale in \texttt{WORKOUT\_STATE} (5) ed effettua la sottoscrizione ai messaggi di notifica della caratteristica \texttt{workoutChar}. Le letture avvengono con una cadenza di circa $1\,\text{Hz}$. Ciascun pacchetto dati trasmesso dal bracciale ha una dimensione di esattamente \textbf{5 byte}. L'applicazione decodifica il pacchetto binario ricevuto per ricostruire le seguenti metriche:
+Quando l'utente avvia un allenamento, l'applicazione forza la transizione del bracciale nello stato \texttt{WORKOUT} (5) ed effettua la sottoscrizione ai messaggi di notifica della caratteristica \texttt{workoutChar}. Le letture avvengono con una cadenza di circa $1\,\text{Hz}$. Ciascun pacchetto dati trasmesso dal bracciale ha una dimensione di esattamente 5 byte. L'applicazione decodifica il pacchetto binario ricevuto per ricostruire le seguenti metriche:
 \begin{itemize}
     \item \textbf{Byte 0 (BPM):} Frequenza cardiaca istantanea estratta come intero a 8 bit senza segno.
     \item \textbf{Byte 1 e 2 (passi):} Conto totale dei passi accumulati. Trattandosi di un valore a 16 bit trasmesso con codifica Little-endian, l'app lo decodifica combinando i byte mediante l'operazione:
@@ -166,7 +160,7 @@ Quando l'utente avvia un allenamento, l'applicazione forza la transizione del br
     \item \textbf{Byte 3 (cadenza):} Cadenza istantanea di camminata/corsa in passi al minuto (SPM).
     \item \textbf{Byte 4 (intensità):} Livello di intensità dello sforzo (valore discreto da 1 a 10).
 \end{itemize}
-La schermata di allenamento attivo (Figura~\ref{fig:workout_active}) presenta un cronometro centrale che traccia la durata della sessione. Per rendere la lettura immediata durante lo sforzo fisico, il livello di intensità viene categorizzato cromaticamente in tre fasce: \textit{Light} (1--3, verde), \textit{Moderate} (4--7, giallo/arancione) ed \textit{Intense} (8--10, rosso).
+La schermata di allenamento attivo (Figura~\ref{fig:workout_active}) presenta un cronometro centrale che traccia la durata della sessione. Per rendere la lettura immediata durante lo sforzo fisico, il livello di intensità viene suddiviso in quattro fasce: Still (1--3), Light (4--5), Moderate (6--7) ed Intense (8--10).
 
 \paragraph{Tracciamento delle zone cardio:} 
 Durante l'allenamento attivo, l'app calcola in tempo reale la zona di frequenza cardiaca corrente dell'utente per fornire un feedback visivo immediato sullo sforzo cardiovascolare. Il calcolo si basa sulla frequenza cardiaca massima ($\text{FC}_{\text{max}}$) stimata tramite la formula classica:
@@ -183,7 +177,7 @@ In base al rapporto percentuale tra la frequenza cardiaca istantanea ed il valor
     \item \textbf{Anaerobica (80\%--90\%):} sforzo anaerobico intenso per lo sviluppo della soglia lattacida (colore arancione scuro).
     \item \textbf{Massimo sforzo (oltre il 90\%):} sforzo massimale ad alta intensità (colore rosso).
 \end{itemize}
-Alla pressione del tasto di arresto, l'app rimuove la sottoscrizione alle notifiche, ordina alla band di tornare in \texttt{IDLE}, impacchetta la serie temporale accumulata e la scrive in formato JSON.
+Alla pressione del tasto di fine allenamento, l'app rimuove la sottoscrizione alle notifiche, ordina alla band di tornare allo stato \texttt{IDLE}, impacchetta la serie temporale accumulata e la scrive in formato JSON.
 
 \subsection{Dettaglio dell'allenamento}
 Selezionando una sessione di allenamento salvata, l'interfaccia utente mostra una schermata di dettaglio analitico (Figura~\ref{fig:workout_detail_screen}). L'app analizza l'intero vettore delle serie temporali dei dati registrati per estrarre informazioni aggregate: il battito cardiaco medio e massimo, la cadenza media e quella di picco, e il profilo temporale dell'intensità dello sforzo.
@@ -195,14 +189,14 @@ I dati vengono plottati su quattro grafici a linee indipendenti tramite la libre
     \item \textbf{Cadenza:} Traccia l'andamento della frequenza di passo, utile per analizzare la regolarità del passo.
     \item \textbf{Intensità:} Visualizza la variazione dell'intensità dello sforzo durante le diverse fasi della sessione.
 \end{itemize}
-Per garantire una resa grafica eccellente anche per sessioni brevi (con pochi punti di telemetria reali), l'applicazione implementa una logica di interpolazione dinamica che modella i punti intermedi applicando funzioni sinusoidali con fluttuazioni casuali per simulare l'andamento fisiologico reale dei parametri. Ciascun grafico supporta interazioni touch per esplorare i singoli campioni tramite tooltip e formatta l'asse delle ascisse calcolando il tempo trascorso relativo in minuti e secondi (\texttt{MM:SS}).
+Per garantire una resa grafica eccellente anche per sessioni brevi (con pochi punti di telemetria reali), l'applicazione implementa una logica di interpolazione che modella i punti intermedi per simulare l'andamento reale dei parametri. Ciascun grafico supporta interazioni touch per esplorare i singoli campioni tramite tooltip e formatta l'asse delle ascisse calcolando il tempo trascorso relativo in minuti e secondi.
 
-\paragraph{Scomposizione delle zone cardio storiche:}
+\paragraph{Scomposizione delle zone cardio storiche}
 Oltre ai grafici a linee, la schermata di dettaglio include una card riassuntiva dedicata all'analisi delle zone di frequenza cardiaca. 
 L'applicazione elabora l'intera serie temporale della frequenza cardiaca registrata durante la sessione e calcola il tempo totale speso (espresso in minuti e secondi) e la relativa percentuale per ciascuna delle cinque zone cardio. 
 Questi dati vengono visualizzati attraverso un elenco descrittivo affiancato da barre di progresso colorate associate cromaticamente alle rispettive zone, offrendo un quadro immediato della ripartizione fisiologica dell'allenamento dell'utente.
 
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}[t]{0.3\textwidth}
         \centering
@@ -224,34 +218,34 @@ Questi dati vengono visualizzati attraverso un elenco descrittivo affiancato da 
 La schermata di inferenza (Figura~\ref{fig:inference_screen}) permette di visualizzare direttamente i risultati delle predizioni del classificatore Random Forest operante sul firmware del bracciale. 
 Per prevenire l'usura della batteria del wearable causata dall'esecuzione continuativa dell'algoritmo di Machine Learning a bordo chip e dal campionamento ad alta frequenza dei sensori inerziali, l'applicazione applica una politica di attivazione rigorosa basata sul ciclo di vita della schermata:
 \begin{itemize}
-    \item \textbf{Fase di inizializzazione:} all'apertura della pagina, l'applicazione richiede la transizione del bracciale allo stato di inferenza e sottoscrive il flusso di notifiche per ricevere le predizioni.
-    \item \textbf{Fase di chiusura:} non appena l'utente decide di navigare verso un'altra schermata o di chiudere l'applicazione, quest'ultima interrompe la ricezione dei dati e invia immediatamente una richiesta per riportare il bracciale nello stato di riposo, spegnendo i sensori inerziali.
+    \item \textbf{Fase di inizializzazione:} all'apertura della pagina, l'applicazione richiede la transizione del bracciale allo stato \texttt{INFER} e sottoscrive il flusso di notifiche per ricevere le predizioni.
+    \item \textbf{Fase di chiusura:} non appena l'utente decide di navigare verso un'altra schermata o di chiudere l'applicazione, quest'ultima interrompe la ricezione dei dati e invia immediatamente una richiesta per riportare il bracciale nello stato \texttt{IDLE}, spegnendo i sensori inerziali.
 \end{itemize}
 
 I codici numerici inviati dal bracciale su \texttt{inferChar} vengono decodificati in tempo reale dall'applicazione per aggiornare l'interfaccia utente:
 \begin{itemize}
     \item \textbf{Classe 0 (Still):} corpo a riposo o stazionario. L'applicazione mostra un'icona statica di rilassamento. Non viene applicata alcuna animazione alla cornice circostante.
     \item \textbf{Classe 1 (Walking):} camminata regolare. L'app mostra un'icona di persona che cammina. La cornice dell'icona avvia un'animazione di pulsazione concentrica lenta.
-    \item \textbf{Classe 2 (Running):} corsa o movimento rapido. L'app mostra un'icona di persona che corre. Per rispecchiare l'elevato ritmo motorio, la pulsazione grafica della cornice viene accelerata.
+    \item \textbf{Classe 2 (Running):} corsa. L'app mostra un'icona di persona che corre. Per rispecchiare l'elevato ritmo motorio, la pulsazione grafica della cornice viene accelerata.
 \end{itemize}
-Questo meccanismo di variazione dinamica della frequenza di pulsazione visiva fornisce all'utente una percezione immediata della precisione del modello HAR, evidenziando come l'inferenza TinyML risponda prontamente ai cambi di andatura del soggetto.
+Questo meccanismo di variazione dinamica della frequenza di pulsazione visiva fornisce all'utente una percezione immediata della dinamica dell'attività fisica in corso.
 
 \subsection{Schermata delle impostazioni}
-La schermata \textit{Settings} (Figura~\ref{fig:settings_screen}) raggruppa le funzioni di connessione hardware e di gestione dello storage locale. 
+La schermata Settings (Figura~\ref{fig:settings_screen}) raggruppa le funzioni di connessione hardware e di gestione dello storage locale. 
 Se l'app non è connessa a un bracciale, attiva una routine di scansione continua. I dispositivi rilevati vengono visualizzati in una lista ordinata in base alla potenza del segnale radio ricevuto.
 
-L'applicazione decodifica il valore RSSI (\textit{Received Signal Strength Indicator}) in dBm per stimare la distanza fisica e la qualità del link radio, visualizzando un'icona del segnale colorata in tempo reale:
+L'applicazione decodifica il valore RSSI (Received Signal Strength Indicator) in dBm per stimare la distanza fisica e la qualità del link radio, visualizzando un'icona del segnale colorata in tempo reale:
 \begin{itemize}
     \item \textbf{Verde (RSSI $\ge -60\,\text{dBm}$):} segnale ottimale, accoppiamento stabile a breve distanza.
     \item \textbf{Giallo ($-70\,\text{dBm} \le \text{RSSI} < -60\,\text{dBm}$):} segnale buono, distanza moderata.
     \item \textbf{Arancione ($-85\,\text{dBm} \le \text{RSSI} < -70\,\text{dBm}$):} segnale debole, possibili rallentamenti di notifica.
-    \item \textbf{Rosso (RSSI $< -85\,\text{dBm}$):} segnale stabile o a rischio per fuori portata.
+    \item \textbf{Rosso (RSSI $< -85\,\text{dBm}$):} segnale instabile o a rischio per fuori portata.
 \end{itemize}
 
-\paragraph{Profilo utente ed impostazione dell'età:}
+\paragraph{Profilo utente ed impostazione dell'età}
 La schermata include una sezione dedicata al profilo utente, contenente una scheda per la gestione dell'età.
 Cliccando sulla scheda, viene aperto un modale che permette all'utente di selezionare la propria età in un range compreso tra $10$ e $100$ anni.
-Alla pressione del tasto di salvataggio, l'età selezionata viene persistita nel provider del servizio ed utilizzata per ricalcolare immediatamente le soglie percentuali delle zone cardio durante le sessioni di allenamento attive e nello storico.
+Alla pressione del tasto di salvataggio, l'età selezionata viene utilizzata per calcolare le soglie percentuali delle zone cardio durante le sessioni di allenamento attive e nello storico.
 
-\paragraph{Gestione dati locali:}
+\paragraph{Gestione dati locali}
 Infine, la schermata ospita la sezione di gestione della memoria locale. L'utente ha la possibilità di cancellare la cronologia degli allenamenti memorizzati. Trattandosi di un'operazione distruttiva, l'app implementa un flusso di sicurezza: la pressione del pulsante apre un modale personalizzato che spiega le conseguenze dell'operazione. Solo alla conferma esplicita dell'utente viene effettuata la pulizia dei dati in memoria.
