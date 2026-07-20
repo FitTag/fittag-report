@@ -1,0 +1,24 @@
+\section{Conclusioni}
+Il progetto FitTag ha dimostrato con successo la fattibilità e l'efficacia dell'integrazione tra sistemi embedded a basso consumo, algoritmi di machine learning sul dispositivo e applicazioni mobile cross-platform.
+
+L'infrastruttura hardware del bracciale FitTag Band, incentrata sul SoC Seeed Studio XIAO nRF52840, ha consentito l'acquisizione efficiente dei segnali cinematici e biometrici. L'implementazione on-device del modello di classificazione Random Forest ha evidenziato come sia possibile eseguire l'attività di riconoscimento motorio in tempo reale direttamente a bordo del microcontrollore, azzerando la dipendenza dalla connettività per l'elaborazione dei dati.
+
+Parallelamente, l'applicazione mobile FitTag App ha fornito un'interfaccia utente moderna, reattiva e altamente fruibile, capace di gestire lo stack di comunicazione Bluetooth Low Energy (BLE). La decodifica binaria dei pacchetti di telemetria, il tracciamento dinamico delle zone di frequenza cardiaca ed la rappresentazione grafica delle metriche sportive hanno permesso di offrire all'utente uno strumento completo per il monitoraggio della propria attività fisica.
+
+\section{Sviluppi futuri}
+L'architettura modulare sviluppata pone le basi per estensioni a lungo termine, sia sul fronte software che su quello hardware.
+
+\subsection{Evoluzione software}
+Sul piano dell'infrastruttura software, il principale obiettivo di sviluppo futuro riguarda il superamento della persistenza esclusivamente locale tramite l'introduzione di una piattaforma backend centralizzata:
+\begin{itemize}
+    \item \textbf{Gestione utenti ed autenticazione:} implementazione di un sistema di gestione degli account utente con autenticazione sicura. Questo consentirà di associare i dati biometrici, le preferenze ed i profili individuali a un account cloud personale.
+    \item \textbf{Database remoto e API REST:} sviluppo di un database centralizzato affiancato da un insieme di API web per la sincronizzazione automatica dello storico delle sessioni, garantendo il backup dei dati e l'accessibilità multi-dispositivo.
+    \item \textbf{Integrazione diretta dell'inferenza nella registrazione dell'attività:} l'evoluzione più significativa a livello applicativo consiste nell'integrazione del modello di classificazione direttamente all'interno del flusso di registrazione dell'allenamento. Attualmente le modalità di inferenza e di allenamento operano come stati distinti della macchina a stati finiti; l'obiettivo futuro è unificare i due processi, consentendo al bracciale di etichettare automaticamente ed in tempo reale i cambi di attività sportiva (ad esempio il passaggio da camminata a corsa o riposo) all'interno della medesima sessione di allenamento salvata.
+\end{itemize}
+
+\subsection{Evoluzione hardware}
+Dal punto di vista dell'hardware, le evoluzioni future sono orientate alla trasformazione del prototipo in un prodotto wearable di livello commerciale:
+\begin{itemize}
+    \item \textbf{Progettazione di una PCB custom e miniaturizzazione:} la realizzazione di una scheda a circuito stampato (PCB) custom consentirà la spinta miniaturizzazione dell'hardware, integrando in un formato estremamente compatto il SoC nRF52840, l'unità inerziale LSM6DS3TR-C, il pulsossimetro MAX30102 ed il circuito di ricarica BQ25101. Questo processo di miniaturizzazione eliminerà i collegamenti con cavi volanti ed i moduli di prototipazione, ottimizzando il layout elettrico e riducendo al minimo l'ingombro dell'elettronica da indossare.
+    \item \textbf{Realizzazione di un case dedicato:} la progettazione e produzione di un involucro protettivo ed ergonomico. Il case consentirà l'alloggiamento sicuro della batteria ai polimeri di litio e l'aggancio di un cinturino regolabile, conferendo alla FitTag Band un aspetto estetico pulito e compattos, adatto all'impiego quotidiano ed all'attività sportiva.
+\end{itemize}
